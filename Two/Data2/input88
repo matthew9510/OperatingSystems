@@ -1,0 +1,6 @@
+sleep 1 &
+sleep 1 &
+sleep 1 &
+sleep 2 
+echo foreground jobs should clear out all zombies...if you use wait() correctly.
+/bin/ps -xu

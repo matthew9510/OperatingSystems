@@ -1,0 +1,4 @@
+tr aeiou AEIOU<<mydelimiter
+		Lots	of  whitespace     between words.
+mydelimiter fakeout
+mydelimiter

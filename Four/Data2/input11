@@ -1,0 +1,1 @@
+< /home/cs/faculty/cs570/Data2/input1 cat | tr a-z A-Z > your.outputc

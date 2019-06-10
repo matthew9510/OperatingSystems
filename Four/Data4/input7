@@ -1,0 +1,2 @@
+cat < /home/cs/faculty/cs570/Data1/input6 | tr fusc cil | tr e a | tr hb s>your.outpute
+cat < /home/cs/faculty/cs570/Data1/input6 | tr fuscehb cillas | tr a-z A-Z > your.outputf

@@ -1,0 +1,16 @@
+Resources utilized:
+- ~masc000/CbyDiscovery/ch2/inout2.c
+- getword.h documentation to help me express the functionality of the function getword()
+- man pages for all the system calls which helped me understand which include statements to utilize
+- c by discovery for references
+- program 2 instructions to help me describe my program 2
+- libgen library for the function basename to help with the implementation of cd
+
+NOTE:
+Double meta characters are handled by continuing parse and handled in main, the prompt will reprint after letting the user know
+i.e. < &
+Additional note:
+Metacharacters preceded with a backslash will treat the meta characters as regular characters with no special functionality
+
+
+I believe everything works perfectly under all conditions.

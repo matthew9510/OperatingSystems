@@ -1,0 +1,124 @@
+	Program 3				CS570 Fall 2018
+
+Deadlines:	TWO deadlines will be listed in ~cs570/calendar, since you can
+		get 20% extra credit if you finish a week early.
+
+--> Specifications <--
+
+This assignment deals with semaphores, concurrent tasks, and shared variables.
+In this assignment, you will codify rules to manage a gymnasium that serves
+joggers and basketball shooters: Unfortunately, it has been found that these
+two groups can't coexist on the gym floor at the same time, so no shooter is
+allowed on when there are already joggers on the floor -- and vice versa.
+Every day, up to MAXCUSTOMERS customers show up.  (Constants such as
+MAXCUSTOMERS are defined in the file ~cs570/Three/p3.h; see the implementation
+notes below.)  Each will want to do his/her thing (jogging or shooting) during
+a number of sessions during the day.
+
+In order to follow the exclusion rules, all customers make use of the 
+prolog() and epilog() functions. Most of your work will be in writing these two
+routines.
+
+(That is, all the ugly work of setting up the simulation, randomly generating
+customers and defining their times of arrival and length of their requests has
+already been done for you.  You only have to see that each customer 'follows
+the rules' by making the appropriate decisions in the prolog() and epilog()
+routines.)
+
+In addition to the concrete "rules" of the gymnasium, there are
+"desirable" properties of a solution. These are also gradable issues.
+For example, process blocking is more desirable than busy waiting.
+Your solution should support as much concurrency as possible while
+still enforcing the specifications of the problem.
+
+You should use POSIX threads (pthreads) and POSIX semaphores to solve
+this problem. However, the only thread and semaphore functions you
+are allowed to use are:
+sem_init
+sem_wait
+sem_post
+sem_unlink
+
+edoras has man pages for these system calls, and you may also find useful info
+on the web, such as:
+http://www.kernel.org/doc/man-pages/online/pages/man3/sem_open.3.html
+Make sure you only pay attention to POSIX pages, or you might be misled,
+since different types of semaphores can have different behavior and syntax.
+
+--> Implementation <--
+
+The p3 project should contain only the following files, all in the
+subdirectory ~/Three.  (You should see me if you feel you need more files.)
+Don't permit any of your files to be public.
+
+p3 --	the executable program.  This can be compiled and run before you write
+	any code, but it will fail miserably (since the prolog() and epilog()
+	routines are currently empty, so everyone enters the gym immediately,
+	even if they are not supposed to).  p3 also accepts one argument,
+	which will be used as a random seed so that you can test your protocols
+	under many different environments.  You'll need to experiment to find
+	seeds that result in appropriately large input sizes.
+
+gradernotes -- The file called ~/Three/gradernotes is intended to be read by a
+	human grader. It should contain any notes that you want the grader to
+	read.  ~/Three/gradernotes *must* contain certain things, in this order:
+ 1)	A statement certifying that:
+	"I believe everything works perfectly under all conditions", or
+	else you must point out (and try to explain) places where your p3
+	does not meet the specs.
+	If the failure is due to an underlying weakness of the
+	specs, explain how the problem might be fixed.  If your program only
+	works under very special conditions, you must support your contention
+	that it works at all by including script session(s) at the end of
+	~/Three/gradernotes in which you test your p3.
+ 2)	A statement certifying that: "I wrote the p3helper.c code myself."
+ 3)	An explanation of how you achieved successful coordination.
+ 4)	(optional) Any overall explanations you wish to include.
+NOTE: there is an executable file ~cs570/Three/createlinks which will create
+the ~/Three directory and all the links described below.  EITHER run that file,
+OR mkdir ~/Three and run all the 'ln' commands listed below 'by hand'.
+
+makefile -- the makefile for this project.  This should simply be a symbolic
+	link to the file  ~cs570/Three/makefile .
+	Establish such a link (once and for all) with the command:
+            ln -s ~cs570/Three/makefile ~/Three/makefile
+	Note that your final suite of files must be capable of producing an
+	executable p3 by typing nothing more than
+            make
+	when the current directory is ~/Three.
+	You should study this makefile carefully since it implies various
+	things about how your project must be put together.
+CHK.h -- This should simply be a symbolic link to the file ~cs570/Three/CHK.h .
+	Establish such a link (once and for all) with the command:
+            ln -s ~cs570/Three/CHK.h ~/Three/CHK.h
+	(Using the CHK.h macro in your code is allowed but not required.)
+p3.h -- header information for your program. This should simply be a
+	symbolic link to the file ~cs570/Three/p3.h . Establish such a link
+	(once and for all) with the command:
+            ln -s ~cs570/Three/p3.h  ~/Three/p3.h
+	You should study this file, but keep in mind that (as with many
+	real programming situations) the definitions given there may be
+	changed as time goes on. Your implementation should be able to
+	accommodate such change with a minimum of programmer inconvenience.
+p3main.c -- The driver program for the gymnasium. This should simply be a
+	symbolic link to the file  ~cs570/Three/p3main.c . Establish such a link
+	(once and for all) with the command:
+            ln -s ~cs570/Three/p3main.c  ~/Three/p3main.c
+	You don't change this file, but understanding what it does is
+	important, since there are function calls here to routines that
+	you will write in p3helper.c 
+p3helper.c -- This is the only file you can change. Here you will provide
+	some data definitions and complete the code for several routines.
+	(Stubs for the visible functions are already present in
+	~cs570/Three/p3helper.c . A limited amount of documentation is already
+	present in p3.h.)  Once completed, the routines in p3helper should
+	allow p3main to run the gymnasium according to the Rules described in
+	this assignment.)
+GradeEarly -- The file called ~/Three/GradeEarly (note the odd capitalization)
+is intended to signal that you have completed the project early, and
+wish to take advantage of the extra credit reward.  The contents of the file
+are immaterial; the autograder will only test for the existence of this file;
+if the file has been created by the 120% deadline, your project will be
+picked up for grading at that time (so no further changes to your code or
+documentation will be possible).  If you don't have a correct solution,
+DON'T try for the extra credit (because you won't get it)!

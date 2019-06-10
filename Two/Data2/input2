@@ -1,0 +1,2 @@
+cd /usr/local/man
+/bin/ls -l .| tr a-z A-Z

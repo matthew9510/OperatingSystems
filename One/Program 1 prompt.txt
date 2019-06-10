@@ -1,0 +1,118 @@
+	Program One -- see edoras:~cs570/calendar for program due date(s)
+
+NOTE: a [drastically] simplified version of these Program One specs were
+outlined in the program0 mini-assignment; IGNORE those specs, and instead
+follow the specifications in ~cs570/One/getword.h .  (Most of what you wrote
+for the program0 getword() is mostly still valid and useful, but now you have
+a LOT more special cases to handle if program1 is to work properly.)
+
+In this assignment, you will create p1, a simple lexical analyzer.
+You will need to copy some files from a subdirectory of the cs570 account.
+Note that ~cs570 is a directory found only on edoras (and also note that ~cs570
+means something different than ~/cs570).  Your activity for this assignment
+should take place in a directory called ~/One .  The material you want
+graded must be in the proper directory in your account on edoras by the due
+date to receive any credit for Program 1.  To allow the maximum amount of
+time to complete Program 2 (the specs of which I will discuss in class before
+the due date for Program 1), you should finish Program 1 as soon as possible.
+Program 1 will be reused as a small part of Programs 2 and 4, so it is absolutely
+necessary that you get your lexical analyzer functioning properly, or you
+will not be able to complete subsequent programming assignments.  Start NOW!
+
+Note: edoras has many help files.  A good place to start is:
+http://edoras.sdsu.edu/doc/unixtut/
+Section 1.8 of Tanenbaum (3rd edition) also has some useful information.
+
+Your source files must be on the proper machine (edoras) in the designated
+directory (~/One) and have the proper names (makefile, gradernotes, p1.c,
+getword.h, and getword.c) at the time the automatic grading programs
+measure your performance.  These files are outlined in the Implementation
+Section below.  You need only create gradernotes and getword.c; the other
+three files can be used verbatim from ~cs570/One.  You will use your getword.c
+code in the next assignment, so it is important to design it correctly
+at the outset.  ~/One/makefile contains the proper commands to
+successfully create an executable file called ~/One/p1 from your source files.
+The files ~cs570/One/getword.h and ~cs570/One/makefile are designed for gcc.
+
+--> Specifications <--
+Your lexical analyzer will be implemented by a module called getword(),
+and will be repeatedly called by a driver (~cs570/One/p1.c) that examines
+successive input lines until getword() returns -1.  The specifications for
+the lexical analyzer are contained in the file ~cs570/One/getword.h
+
+--> Implementation <--
+	The p1 project should contain the following files, each in the
+	subdirectory ~/One (on edoras). (Consult with me if you think you
+	need more files.)
+
+p1   --	the executable program
+
+p1.c -- source code for the driver.  This should simply be a link to the
+	file  ~cs570/One/p1.c. Establish such a link (once and for all)
+	with the command:
+	    ln -s ~cs570/One/p1.c ~/One/p1.c
+	(there is no need to modify ~cs570/One/p1.c)
+	The driver provided in this assignment can assist you in testing your
+	code.  For example, in response to the input of:
+	Hi there<<&
+	(followed by a newline, and then by EOF), p1 will print:
+	n=2, s=[Hi]
+	n=5, s=[there]
+	n=2, s=[<<]
+	n=1, s=[&]
+	n=0, s=[]
+	n=-255, s=[]
+gradernotes -- a mandatory text file in which you must state FIRST that
+	"I wrote this code myself," or list all sources from which you borrowed.
+	SECOND, that either your project has no known bugs or outline its
+	known shortcomings.  This may be FOLLOWED by any comments you wish
+	to communicate to the grader.
+makefile -- the makefile for this project.  This should simply be a link to the
+	file  ~cs570/One/makefile. Establish such a link (once and for all)
+	with the command:
+	    ln -s ~cs570/One/makefile ~/One/makefile
+	Note that your final suite of files must be capable of producing an
+	executable p1 by typing nothing more than
+	    make
+	when the current directory is ~/One .
+	You should study this makefile carefully since it implies various
+	things about how your project must be put together.
+	Note that the name should be 'makefile', NOT 'Makefile'.  In this
+	project, all filenames must be lowercase.
+
+getword.c -- the C code for the getword function.  This file should be
+	created by you, and should implement the functionality described
+	in ~cs570/One/getword.h.  Of course, getword.c should #include
+	this getword.h
+
+getword.h -- the header file provided for you in ~cs570/One/getword.h
+	This file contains detailed specifications regarding getword() (there
+	should be no need to modify ~cs570/One/getword.h if you use gcc;
+	therefore, a soft link to ~cs570/One/getword.h should suffice).
+
+--> Delivery <--
+To turn in p1, you need only create the directory ON EDORAS called ~/One and
+populate it with your source files.  The automatic grading program will check
+to see whether ~/One/makefile, ~/One/p1.c and ~/One/getword.h are linked to the
+corresponding ~cs570 files, and will also print the files you create: ~/One/getword.c
+and ~/One/gradernotes.  The autograder will then (re)compile your program on the
+spot, and then test the newly-formed executable with various inputs.
+
+You must not change any files after the grading program has been run; do
+not do anything that would modify their contents or timestamps until you
+receive a grade for this assignment.  In particular, the automation (or I) may
+have to make further tests even after your material has been initially collected,
+so you should consider the directory "sealed" once the automated grader
+has run.  If you wish to continue to experiment with the files in ~/One, make
+COPIES of these files in some other directory, and play with those copies.
+Please don't make any of your files public.
+
+The file called ~/One/gradernotes is intended to be read by a
+human grader.  It should contain any notes that you want the grader
+to read.  ~/One/gradernotes *must* contain TWO statements certifying that
+"I believe everything works perfectly under all conditions", or else you must
+point out (and try to explain) places where your p0 does not meet the specs.
+It also must certify "I wrote this code myself", or else you must list all the
+sources from which you drew ideas (such as Foster's recommended inout2.c file).
+If this file is not named correctly, the autograder will treat it as though
+it doesn't exist, which is not healthy for your grade.

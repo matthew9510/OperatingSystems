@@ -1,0 +1,379 @@
+	Program 4				CS570 Fall 2018
+
+	TWO deadlines will be listed in ~cs570/calendar, since you can get
+	25% extra credit if you finish a week early.
+
+In this assignment, you will enhance the C program called p2, which acts as a
+simple command line interpreter for our UNIX system.  Your activity for this
+assignment should initially take place in a directory called ~/Two and your
+main program should initially be in a file called ~/Two/p2.c .  (Note that
+we are reusing the same directory from a prior project.)
+
+Your source files must be in the designated directories (and named
+properly) at the time the automatic grading programs measure your performance.
+Ultimately, your main program should be in a file called ~/Two/p2.c
+(along with a modified getword.c) so that ~/Two/makefile can successfully
+create an executable file called ~/Two/p2 from your source.
+
+--> Specifications <--
+
+You are responsible for two main enhancements [as well as ensuring that all
+the stuff from the program2 specs work]: allowing multiple pipelines and
+setting/printing environment variables.
+
+Your program should prompt for input with the six-character string
+":570: "
+(But note below how the cd command will affect the prompt.)
+
+Every line of input will consist of 0 or more "words", where a word is defined
+to agree with the specifications for program 1, with one exception:
+We are now giving special treatment to the character '$' (by paying attention
+to when getword() returned a negative value).
+
+p2 skips input lines that contain 0 words, and simply reissues the prompt.
+
+p2 terminates when it sees an input line whose first word is the end of file
+marker [EOF].  The metacharacters "<<", "<", ">", "|", leading "$" and "~",
+and trailing "&" have special significance to your shell; see below.
+
+For other inputs, p2 tries to interpret the first word as the name of an
+executable file.  (Helpful error messages should be produced if the file does
+not exist or is not executable -- and your shell should not crash.)  The
+remaining words, after interpreting the metacharacters, are treated as the
+arguments for that executable file.  A new process is created to execute the
+file, and the parent [usually] waits for this process to complete.
+
+Your shell must be able to handle redirection of I/O, using the words
+"<", ">", and "|" as in the usual shells.  For example, if "spell" were a
+spelling checker program, you could use it to scan a file in "Proj/mytext"
+and put the results in file "/tmp/dumberrors", by typing:
+spell < Proj/mytext > /tmp/dumberrors
+Note: Since getword() already uses metacharacters to separate words,
+the following would have exactly the same effect:
+spell<Proj/mytext>/tmp/dumberrors
+Note: The following is also equivalent:
+< Proj/mytext > /tmp/dumberrors spell
+...and, after processing the redirection directives, "spell" would still be
+considered the 'first' word of the command line.
+
+Like 'real' shells,
+c1 > file1 > file2
+should be flagged as an error (your program is never required to redirect
+output to two places at once), and [since this is ambiguous syntax] your p2
+should NOT attempt to carry out the command.
+Note that the following is NOT an error:
+< fileB > fileA command1 | process2
+(since there is a rational interpretation for this with no ambiguity:
+command1 will read from fileB and write to the pipe, while process2 will
+read from the pipe and write to fileA).  Note that, like 'real' shells,
+our idea of the 'first' word on the line is really a bit complicated to
+state precisely: we actually execute the first word that is not associated
+with a redirection metacharacter ('command1' in this example).  The simple rule
+is: the effects of '< fileB' is always applied to the first process, and the
+effects of '> fileA' is always applied to the last [and sometimes only] process.
+
+As before, an '&' will cause p2 to start a new process to execute the
+binary, print out the PID of that process in the specific format described
+in program2, and continue without waiting for the completion of the child.
+(See the program2 specs for full details -- it does not do anything special
+with the '&' unless it is the LAST word on the command line.)
+
+Your p2 should handle the cd(1) command correctly as in program 2 (as a built-in,
+without forking a child), along with an additional builtin called 'environ'.
+Each 'cd' also modifies the prompt, showing [part of] the path name of the
+current directory.  For example:
+:570: cd /usr/local/bin
+bin:570: cd ..
+local:570: 
+That is, much like your tcsh prompt, the [tail of the] current directory
+path appears in the prompt.
+
+'environ' accepts 1 or 2 arguments (any other number should be reported as an
+error).  Called with one argument,
+environ HOME
+...should cause the current value of your $HOME environment variable to appear
+on stdout (followed by a newline).
+environ snafubar
+...should print a null string followed by a newline (assuming there is in
+fact no such environment variable with that goofy name).
+environ can also accept two arguments, in which case it SETS the value of the
+variable (rather than merely printing it).  For example,
+environ SHELL /bin/bash
+...should cause the string "HOME=/bin/bash" to replace the current definition of
+SHELL in your u-struct area.  (So subsequently,
+environ SHELL
+from then on would print "/bin/bash" rather than the usual "/bin/tcsh" definition.
+This is similar to the effect you would get in a 'real' shell, such as executing
+printenv SHELL  ;  setenv SHELL /bin/bash  ;  printenv SHELL
+from your 'edoras Two[46]% ' prompt.)
+Note that if you feed a shell that meets the program4 specs the three lines:
+environ HOME /tmp
+cd
+pwd
+...then pwd should report "/tmp" since you [should have] designed cd with
+no arguments to change your current working directory to the current value
+that is stored in the HOME environment variable, which had already been
+changed to "/tmp".  NOTE: 'real' shells allow built-in commands in pipelines
+(such as 'printenv HOME | tr a-z A-Z'), but p2 does NOT have to worry about
+handling 'environ' within a pipeline.
+
+Your program4 shell gives special significance to the character '$', but only
+when it occurs as the first character in a word (normal shells pay attention
+to '$' no matter where it occurs, but we want to keep things simple here).
+If '$' is first, replace the word with whatever the value of the given
+environment variable is.  For example, if the command line input is:
+echo $PAGER $HOSTTYPE
+...you will set up the argv array for the forked child as though the input was:
+echo /bin/more x86_64-linux
+(or whatever the values of the environment variables happen to be at the time).
+For environment variables that don't exist, do what your shell does, e.g.:
+edoras Two[47]% echo $snafubar
+snafubar: Undefined variable.
+(Note that NO child is forked in this case, since the command was not parsable.
+For simplicity, treat an environment variable that exists but is null as though
+it were nonexistent.)  If you react to the '$' as specified, you should be
+pleasantly surprised that things like
+$PAGER /copyright > $USER
+will work without you have to even think about dealing with special cases.
+In the above, /bin/more will run and its output (the contents of /copyright)
+will wind up in a file created by your p2, named with your username.
+Note that "$HOME" causes a string replacement very similar to what your
+shell does when it encounters a lone "~".
+
+Program 2 only handled '~' when it was a one-character word; program 4 will do
+something special with even longer words that start with '~', just like 'real'
+shells.  For example, the word "~cs570/Data2" should be reinterpreted to be
+/home/cs/faculty/cs570/Data2
+That is, the six characters "~cs570" should be replaced by the absolute pathname
+to the home directory of the cs570 username.  This information can be gleaned
+from the /etc/passwd file.  For example:
+edoras% grep ^cs570: /etc/passwd
+cs570:x:2311:1007:Operating Systems CS570:/home/cs/faculty/cs570:/bin/tcsh
+The string you want is the sixth field of the relevant line in the passwd file.
+Note: 'real' shells can get the right answer to convoluted things like
+"~$USER", but you do NOT have to worry about complicated cases like this!
+
+If you've followed the getword.h specs correctly,
+echo \$HOST $HOST my$HOST
+will print
+$HOST edoras.sdsu.edu my$HOST 
+Note that the negative values that getword() returns will make it easy for
+parse() to distinguish between these cases.
+
+'Real' shells allow for an unlimited number of pipes in one command, but p2
+is limited to handling only 10 pipelines.  That is, commands like
+command1 | process2 | a.out
+should not be considered an error.  Likewise,
+command1 | process2 <readit > writeit| a.out
+also has a logical interpretation:
+The first command always respects the '<' directive, so in this case, command1
+reads from 'readit' (and sends its output into a pipe connected to process2).
+process2 reads from this pipe and writes to yet another pipe. a.out reads from
+this second pipe and [because it is the LAST process in the pipeline] a.out pays
+attention to the '>' metacharacter, and so a.out writes to the file 'writeit'.
+As in program2, you must use "vertical pipelining", so p2 will likely have
+great-grandchildren and even further descendants.
+
+And finally, p2 should process the ""<<" 'hereis' document specifier the
+same way 'real' shells do.  For example,
+> foo cat << goofydelimiter
+line1
+sentence2
+goofydelimiter
+...will create a file called 'foo' containing two lines:
+line1
+sentence2
+'cat' normally writes to stdout, but '>' redirected the output to 'foo'.
+'cat' normally reads from stdin, but '<<' redirected the input to come from
+the current input stream.  In particular, we read character-by-character until
+we find a line that exactly matches the word following the "<<".  (In this
+case, we want a line starting with 'g', etc., ending with 'r' and a '\n'.
+At that point, the shell waits for 'cat' to finish (which it will, after
+receiving EOF after "line2\n")... and then p2 picks up processing the 
+next line, as normal.
+
+Perhaps the simplest way to deal with "<<" is to collect the lines and store
+them in a file, then open and dup2() that temporary file.  Another example:
+> bar grep line << hereisEOF | sort -r
+line1
+sentence2
+line3
+hereisEOF
+... will run grep on the three lines of input, pipe the matches to sort,
+and then store the result in the new file 'bar' (which will contain:
+line3
+line1
+...when the smoke clears.  (As with "<", the stuff associated with "<<"
+always affects the leftmost process ['grep' in this case], and ">"
+always is applied to the rightmost process ['sort'].
+
+You will find that some design decisions have been left to your discretion.
+In those cases, any reasonable behavior is acceptable, but when there is
+ambiguity in the command line, always report that as an error.  For example,
+a.out < infile1 < infile2
+is ambiguous.  Are you supposed to read from the first file specified,
+read from the second file specified, or what?  In cases like these, mimic
+what all other UNIX shells do: take NO action, but report an error.
+
+See me if you have any questions about exactly what p2 can do.
+
+--> Implementation <--
+
+The p2 project should contain the following files, each in the
+subdirectory ~/Two.  (You should see me if you think you need more files.)
+Most of these files should already have been set up in the second project;
+you will mostly be modifying files that already exist.
+
+p2 -- the executable program
+
+gradernotes -- a mandatory text file in which you must state FIRST that 
+	"I wrote this code myself," or list all sources from which you borrowed.
+	SECOND, that either your project has no known bugs or outline its
+	known shortcomings.  This may be FOLLOWED by any comments you wish
+	to communicate to the grader.
+
+makefile -- create this via the command:
+	ln -s ~cs570/Two/makefile ~/Two/makefile
+
+p2.h -- common header information for the C source files in your
+	program.  Here are some things that should be in p2.h:
+#include <stdio.h>
+#include "getword.h"
+#define MAXITEM 100 /* max number of words per line */
+
+getword.h -- header file for the function getword()  Create this by:
+	cd ~/Two
+	ln -s ~cs570/One/getword.h
+
+	Your code from Program 1 will need only slight modifications for
+	the p2 in Program 4.
+	Note that getword() doesn't know about the special significance
+	of ";", "|", ">", "<", "<<", and "&"[other than that they are 
+	word delimiters].  As in Program1, getword() simply assembles them
+	in an array just like any other "words".
+
+p2.c -- source code for everything but the getword() routine.
+	See: dup2(2), execvp(3), chdir(2), getenv(3), exit(3), fork(2),
+	open(2), perror(3), wait(2), access(2), pipe(2), fflush(3),
+	sigaction(2), signal(2), setpgid(2), getpgrp(2), killpg(2),
+	and also getline(3), strsep(), strtok(3), getcwd(3) and stat(2).
+	Typing
+	whatis wait
+	...will show four different man pages for wait, most of which are not
+	relevant to this assignment.  The numbers shown above in parentheses
+	refer to the manual section number you actually want, e.g.,
+	man 2 wait
+	will show the Section 2 manual page for wait().  [waitpid() might look
+	like a superior choice, but I recommend against it!]  Note that the
+	use of execvp() should eliminate path search complications.  You are
+	NOT allowed to use system(3).  You are NOT allowed to use any type of
+	exec call other than execvp().
+
+p2 should make use of a separate routine, parse(), that is only responsible
+for the syntactic analysis.  Therefore, p2.c will contain at least two
+functions, main() and parse(), but you may choose to utilize more than two.
+
+All syntactic analysis should be done within parse().  This means, among
+other things, that parse() should set appropriate flags when getword()
+encounters words that are metacharacters.  You may be graded off if your
+routines are ill-designed or do not adhere to the requirements.  Examples
+of poor design: calling parse() more than once per command, or having
+getword() set the flags rather than doing this within parse().
+parse() must use something like the getword() function you wrote in
+Program 1, but modified to treat '|' as a metacharacter.  Examining the
+file ~cs570/Two/makefile may be helpful in determining how to link it into
+your program.
+
+Here is a rough outline for p2.  While this is not to be taken as religiously
+as the other parts of this assignment, you must:
+  use getword() for all program input;
+  ensure that background jobs cannot read from the terminal (redirecting
+  child input to come from /dev/null is one way);
+  ensure that cd will properly affect subsequent commands to p2.
+
+     #include statements
+     #define statements
+     declarations;
+
+     main()
+     {
+           declarations of locals;
+
+           any necessary set-up, including signal catcher and setpgid();
+           for (;;) {
+                issue PROMPT;
+                call your parse() function, setting [global] flags as needed;
+                if (first word is EOF) break;
+                if (line is empty) continue;
+                handle builtins (cd, environ) and continue, or:
+                if (fork() == 0) {
+                       [NOTE: if there is a pipeline, you should probably branch
+                       to a whole different section of special code.]
+                       redirect I/O as requested (background children
+                       sometimes need their stdin redirected to /dev/null);
+                       use execvp() to start requested process;
+                       if the execvp() failed {
+                            print an error message;
+                            exit(9);  (choose different exit values for
+                                      different types of errors)
+                       }
+                }
+                if appropriate, wait for child to complete;
+                else print the child's pid (and in this case, the child should
+                usually have redirected its stdin to /dev/null [if it does not
+                already have a '<' redirection to obey]);
+           }
+//   CAUTION: You must use this next killpg() line verbatim, but
+//   if you haven't correctly used setpgid() earlier, this killpg()
+//   will likely kill the autograder and perhaps your login shell as well!
+           killpg(getpgrp(), SIGTERM);// Terminate any children that are
+                                      // still running. WARNING: giving bad args
+                                      // to killpg() can kill the autograder!
+           printf("p2 terminated.\n");// MAKE SURE this printf comes AFTER killpg
+           exit(0);
+     }
+
+Note: When your normal shell (tcsh) finds that one of its children has been
+killed by a signal, it reports:
+Terminated
+(note the capital 'T').  Indeed, tcsh will do this if p2 is killed
+(as it will be, if you don't catch the signal) sent by the killpg() call.
+You can't [directly] prevent p2 from printing this, since p2 is not the
+process printing that 'T'!  Instead, regard this as an indication that p2 is
+not correctly catching the SIGTERM signal (see sighandler.c for sample syntax,
+and read the man page for setpgid() -- you must arrange things so that p2
+has its own process group, separate from the shell that invoked it].
+
+--> Delivery <--
+
+The automatic grader will also print ~/Two/gradernotes.  You must not change
+any of these after the final grading program has been run.  Don't make any
+of your files public!
+
+Your final suite of files must be capable of producing an executable p2 by
+typing nothing more than
+make
+when the current directory is ~/Two.
+
+The file called ~/Two/gradernotes is intended to be read by a human
+grader. It should contain any notes that you want the grader to
+read.  ~/Two/gradernotes *must* contain TWO statements certifying (1) "I
+believe everything works perfectly under all conditions", or else you must
+point out (and try to explain) places where your p2 does not meet the specs
+(or any commands that don't work).  And you must certify (2) "I wrote this code
+myself", or else you must list the sources from which you drew ideas.  [And
+you can't just say 'I got this from www.gnu.org' -- that's as vague as saying
+'I got this from an encyclopedia'.  You must list a *specific* URL as a source.]
+If your program only works under very special conditions, you must support
+your contention that it works at all by including script session(s) at the end
+of ~/Two/gradernotes in which you test your p2.
+
+The file called ~/Two/GradeEarly (note the odd capitalization) is intended
+to signal that you have completed the project a week early, and wish to
+take advantage of the extra credit reward.  The contents of the file are
+immaterial; the autograder will only test for the existence of this file.
+If the file has been created by the 125% deadline, your project will be
+picked up for grading at that time (so no further changes to your code or
+documentation will be possible).  Your score will be augmented by 25% (for
+example, if you would have normally received 75% of the points, you will
+instead qualify for 94% of the points possible).

@@ -1,0 +1,249 @@
+
+	CS570 Program Zero -- DUE ALMOST IMMEDIATELY: 9/5/18 (8pm)
+
+Traditionally, the pass rate for this course is shockingly low; the GPA was
+typically around 1.64.  The main cause is lack of preparation to program in C;
+Program Zero is an attempt to change that -- if you can't set up your account
+and make an exceedingly simple C program work within the next week, you will be
+DROPPED from the course after Wednesday, September 5th for lack of prerequisites.
+    If you think you might fail to meet this deadline, start looking around for
+an alternate course NOW, and perhaps get on a waitlist or start attending your
+'backup' course right away.  (If you are waitlisted for this CS570 class, see me
+right away to get an edoras account to complete the assignment; both registered
+students and those waiting will also get their Program Zero 'autograded'.)
+There will be four (possibly more) auto-graded 'preliminary tests' sent to you
+via email, so you can find out for sure if your program meets all the specs.
+That will be five (possibly more) opportunities to demonstrate that you have a
+perfect score; as soon as the autograder says you have a perfect score, relax --
+you will NOT be dropped.  But if we reach the deadline, and none of the tests
+have shown that you have a perfect score, you will surely be dropped. There is
+often confusion about this, so let me be clear: NO exceptions.  "Almost perfect"
+earns disenrollment.  Perfection one minute after the deadline means you are
+out.  I might conjecture about the likelihood of an additional preliminary
+evaluation beyond the promised four 'preliminary runs', but it is always a
+conjecture -- it might not happen, so don't count on it.  And the promised
+preliminaries will likely occur in the early days, so it is VERY risky to
+put off this assignment.  Start NOW.  Once the dust settles, a human (me)
+will look over your documentation, and perhaps lower the score I record in my
+gradebook -- but a documentation downgrade will NOT affect your enrollment.
+    ALL students (whether registered or not) need to SIGN my roster at the
+end of our first class, acknowledging "I have read the course policy statement
+for CS570."  (The most important caveat is that you will automatically FAIL
+this course if you don't do your own programming.)  Registered students will
+get an edoras account right then and there.  Waitlisted students should sign,
+and then send me an email requesting an account.  Once I have verified that
+you have signed our 'contract', I'll email you an account and password.
+    On the actual due date (after 8pm), I will check who completed the simple
+Program Zero, and disenroll those who did not.  Then I will add everyone
+on the waitlist (up to the capacity of the room, at least).  Then I will
+verify that the new additions have completed Program Zero satisfactorily
+(and immediately disenroll them again if they did not).  While I can make no
+guarantees, past experience suggests that everyone who gets a perfect score
+on program 0 will be able to enroll, even if you're currently waitlisted.
+    For the purposes of this discussion, '~' means "the home directory of the
+cssc0nnn edoras account assigned to you for this class"; you may own other
+edoras accounts, but you must use this cssc account for your CS570 projects.
+Similarly, ~cs570 resolves to "the home directory of the cs570 repository".
+    In this assignment, you will write p0, a simple lexical analyzer.
+You will need to link some files from a subdirectory of the cs570 account.
+Note that ~cs570 is a directory found only on edoras (and also note that ~cs570
+means something different than ~/cs570).  Your activity for this assignment
+should take place in a directory called ~/Zero .  The material you want
+graded must be in the proper directory in your account on edoras by the due
+date to receive any credit for Program 0.  (Some of this code will be used in
+Program 1, which in turn will be reused as a small part of Programs 2 and 4.)
+Note: edoras has many help files, e.g.,   http://edoras.sdsu.edu/doc/unixtut/
+    Your source files must be on the proper machine (edoras) in the designated
+directory (~/Zero) and have the proper names (makefile, gradernotes, p0.c,
+getword.h, and getword.c) at the time[s] the automatic grading program
+measures your performance.  These files are outlined in the Implementation
+Section below.  You need only create gradernotes and getword.c; the other
+three files must be used verbatim from ~cs570/Zero, via soft links.  You will
+use the getword.c module in the next assignment, so it is important to design
+it correctly at the outset.  ~/Zero/makefile contains the proper commands to
+successfully create an executable file called ~/Zero/p0 from your source files.
+The files ~cs570/Zero/getword.h and ~cs570/Zero/makefile are designed for gcc.
+
+--> Specifications <--
+Your lexical analyzer will be implemented by a module called getword(),
+stored in ~/Zero/getword.c, and will be repeatedly called by a driver (a link
+to ~cs570/Zero/p0.c) that examines successive words on the input stream (stdin)
+until getword() returns -255.
+
+int getword(char *w);
+* (Note: the preceding line is an ANSI C prototype statement for getword().
+  It will work fine with edoras' C compilers.)
+* The getword() function gets one "word" from the input stream.
+* A "word" is a [maximal] string consisting of anything except space,
+  ';', newline, and EOF (EOF is actually a signal, not a character)
+* INPUT: a pointer to the beginning of a character array
+  (This address is supplied to you in p0.c, as a parameter to getword() .)
+* OUTPUT: -255, 0, or (plus or minus) the number of characters in the word
+  (If we have collected some characters, return the size of the word once
+  you encounter a space, newline or EOF.  But if EOF is encountered while
+  the word size is still zero, then return -255 [and leave an empty string
+  in the character array].)  Similarly, if a ';' or newline is encountered
+  while the word size is still zero, then return 0 [and leave an empty
+  string in the character array].
+* There is an EXCEPTION to the above rule: A word that STARTS with '$'
+  collects the subsequent characters, but you should return the negative of
+  the word length.  For example, "$xyz" puts three characters "xyz" into
+  the array (followed by a null character), but returns -3 instead of +4
+  (due to the '$' at the start).  [By contrast, "x$y$" returns +4 (since
+  the first character was 'x', not '$').]
+* SIDE EFFECTS: bytes beginning at address w will be overwritten.
+  (Normally, we should guard against writing beyond the end of an array,
+  but you do NOT have to worry about that safeguard in p0.)
+
+getword() SKIPS leading spaces, so if getword() is called and there are no
+more words on the line, then w points to an empty string.  All strings,
+including the empty string, will be delimited by a zero-byte (eight 0-bits),
+as per the normal C convention (this delimiter is not 'counted' when
+determining the length of the string that getword will report as a return
+value; see the examples below).
+
+man 3 getchar
+...will tell you about several ways to read from standard input (stdin).
+The only one you care about now is getchar().
+
+Note: you will need to investigate one more function for some special cases:
+man 3 ungetc
+
+The sample program found in ~masc0000/CbyDiscovery/ch2/inout2.c shows how
+to successively read characters from stdin, stopping when EOF is encountered.
+It is a good starting point, but must be modified.  If you just rename inout2.c
+as getword.c, the compiler will create getword.o from it, but the linker then
+will berate you, since both p0.o and getword.o will have a function called
+main(), which is not legal.  Just renaming main() to getword() in getword.c
+won't fare much better, since getword() is supposed to take a very specific
+argument [see the specs above].  And finally, inout2.c merely prints each
+character it reads, which is NOT what getword() is supposed to do; getword()
+assembles a string, and then the main() in p0.c does the actual printing.
+So the putchar() line in inout2.c has to be replaced by about 15 lines of
+code that implements the correct specs for getword().
+
+--> Implementation <--
+	The p0 project should contain the following files, each in the
+	subdirectory ~/Zero (on edoras). (Consult with me if you think you
+	need more files. 'mkdir ~/Zero' will create the needed directory.)
+p0   --	the executable program, created with the 'make' command.
+makefile -- the makefile for this project.  This should simply be a link to the
+	file  ~cs570/Zero/makefile. Establish such a link (once and for all)
+	with the command:
+                 ln -s ~cs570/Zero/makefile ~/Zero/makefile
+	Note that your final suite of files must be capable of producing an
+	executable p0 by typing nothing more than
+                 make
+	when the current directory is ~/Zero .
+p0.c -- source code for the driver.  This should simply be a soft link to the
+	file  ~cs570/Zero/p0.c (created with an 'ln -s' similar to the one above).
+	(there is no need to modify the contents of ~cs570/Zero/p0.c)
+	The driver provided in this assignment can assist you in testing your
+	code.  For example, in response to the one-line input of:
+no-brainer one ; 
+(with a single space after each word), p0 should print:
+n=10, s=[no-brainer]
+n=3, s=[one]
+n=0, s=[]
+n=0, s=[]
+n=-255, s=[]
+
+Similarly,
+  trickier;t$o  $master
+(with extra spaces at the beginning, and newline right after the
+'r' in "master"), p0 should print:
+n=8, s=[trickier]
+n=0, s=[]
+n=3, s=[t$o]
+n=-6, s=[master]
+n=0, s=[]
+n=-255, s=[]
+In the above case, the ';' gets 'used up' to discover that the
+word "trickier" has ended, but then ungetc() has to be used to put
+the semicolon BACK on the input stream, so that it can be seen AGAIN
+in the next call to getword() -- ditto for the newline.  (Note that '$'
+is NOT treated specially unless it is the FIRST character in the word.)
+
+And finally, a ZERO-line file (zero lines, meaning NO newlines) containing
+  $$different $words
+(with EOF coming right after the 's') should cause p0 to print:
+n=-10, s=[$different]
+n=-5, s=[words]
+n=-255, s=[]
+
+gradernotes -- a mandatory text file in which you must state FIRST that
+	"I wrote this code myself," or list all sources from which you borrowed.
+	(For example, if you based your code on the recommended inout2.c,
+	then you should mention Foster as the source.)
+	SECOND, state that either your project has no known bugs or outline its
+	known shortcomings.  This may be FOLLOWED by any comments you wish
+	to communicate to the grader.
+getword.c -- the C code for the getword function.  This file should be
+	created by you, and should implement the functionality described in
+	these directions.  Of course, getword.c should #include this getword.h
+getword.h -- the header file provided for you in ~cs570/Zero/getword.h
+	This file contains detailed specifications regarding getword() (there
+	should be no need to modify ~cs570/Zero/getword.h if you use gcc;
+	indeed, you MUST use a soft link to ~cs570/Zero/getword.h ).
+
+--> Delivery <--
+To turn in p0, you need only create the directory ON EDORAS called ~/Zero and
+populate it with your source files and the indicated soft links.  The automatic
+grading program will check to see whether ~/Zero/makefile, ~/Zero/p0.c
+and ~/Zero/getword.h are linked to the corresponding ~cs570 files, and will
+also print the files you created: ~/Zero/getword.c and ~/Zero/gradernotes.
+The autograder will then (re)compile your program on the spot, and then
+test the newly-formed executable with various inputs.
+
+You must not change any files after the deadline;
+do not do anything that would modify their contents or timestamps until you
+receive a grade for this assignment.  In particular, the automation (or I) may
+have to make further tests even after your material has been initially collected,
+so you should consider the directory "sealed" once the final automated grader
+has run.  If you wish to continue to experiment with the files in ~/Zero, make
+COPIES of these files in some other directory (~/One is a good choice),
+and play with those copies.  Please don't make any of your files public.
+
+The file called ~/Zero/gradernotes is intended to be read by a human grader.  It
+should contain any notes that you want the grader to read.  ~/Zero/gradernotes
+*must* first contain TWO statements, beginning with a certification that "I
+wrote this code myself", or else you must list the sources from which you drew
+ideas (such as Foster's recommended inout2.c file).  You must ALSO state:
+"I believe everything works perfectly under all conditions" [or else you must
+point out (and try to explain) places where your p0 does not meet the specs.]
+If this file is not named correctly, the autograder will treat it as though
+it doesn't exist, which is not healthy for your grade.
+
+IMPORTANT:  Your grade for p0 is also affected by some 'housekeeping' chores:
+When you get your edoras class account, CHANGE THE PASSWORD with:
+passwd
+Also, CHANGE YOUR FINGER INFO with:
+chfn
+...so that it no longer says 'Generic Account 0nnn' but instead lists your
+real first and last name.  Check your results with:
+finger $USER
+...to see if the 'In real life:' field actually lists your correct name.
+IMPORTANT!  The autograder will NOT grade your account unless you do this!
+The ~/README file in your account lists several other administrative tasks
+that you must complete right away, too (mail forwarding, calendar link, etc.).
+
+Checklist for this mini-assignment:                             NOTE: 4, not 5!
+1) passwd                                                             |  
+   To get credit for this, your password MUST BE CHANGED BY 10PM ON 9/4/18.
+2) chfn
+   You will receive NO points OR feedback until you fix your finger information.
+3) cd ; ln -s ~cs570/calendar
+4) Create a valid ~/.forward file, as specified in ~/README .
+5) Change your login shell to /bin/tcsh (via the chsh command).
+6) Create the ~/Zero directory, and populate it with the soft links and files
+   specified in ~cs570/program0 (this file).
+7) Create ~/Zero/getword.c, according to the specifications above.
+   You must receive a PERFECT score from the autograder by 8pm on 9/5/18.
+   or you will be summarily DISENROLLED from CS570 for the semester.
+   [Do all this even if you are waitlisted, or hoping to join the waitlist,
+   if you want a chance to add the course this semester.]
+
+Note to Open University students: you don't want to be enrolled (or even
+waitlisted) yet.  Apparently, if I let you in, and then disenroll you, the
+University keeps a large chunk of your tuition [only a problem for Open U
+students].  See me so that we can make arrangements to avoid this penalty.

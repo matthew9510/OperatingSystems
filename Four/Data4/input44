@@ -1,0 +1,1 @@
+>your.outputi echo dog feet | tr -s dogfe catha | tr a-z A-Z

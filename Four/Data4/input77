@@ -1,0 +1,3 @@
+environ FLAG -a
+
+/usr/bin/uname $FLAG > your.outputO

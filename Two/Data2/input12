@@ -1,0 +1,3 @@
+echo AB~CD ~\ABCD $SHELL $~ \
+echo still part of previous line \$SHELL \&
+\& is a bogus command name

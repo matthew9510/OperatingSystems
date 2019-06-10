@@ -1,0 +1,7 @@
+/bin/rm -f your.output55
+> your.output55 grep line << hereisEOF | sort -r
+line1
+underline
+sentence2
+line3
+hereisEOF

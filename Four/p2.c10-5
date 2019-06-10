@@ -1,0 +1,352 @@
+/* File: p2.c
+ * Name: Matthew Hess
+ * Instructor: John Carroll
+ * Class: CS570
+ * Due Date: 10/5/18
+ */
+
+/* Include Files */
+#include <stdio.h> // EOF is a variable in this module , includes fflush
+#include <stdlib.h> // genenv() system call utilized from this library
+#include "p2.h"
+#include "getword.h"
+#include <math.h>
+#include <unistd.h>  // for chdir() system call, fork() system call, access() system call
+#include <sys/types.h> // for open()
+#include <sys/stat.h> // for open()
+#include <fcntl.h> // for open()
+#include <signal.h>
+#include <string.h>
+#include <errno.h>
+
+// todo make sure you include all the files needed for system calls
+
+/* Global Variable Declarations */
+int BACKSLASH_FLAG = 0; // external declaration, used in getword.c
+int INPUT_REDIRECTION_FLAG = 0;
+int OUTPUT_REDIRECTION_FLAG = 0;
+int PIPELINE_FLAG = 0;
+int WAIT_FLAG = 0;
+int SYNTAX_ERROR_MULTIPLE_INPUT_REDIRECTIONS = 0;
+int SYNTAX_ERROR_MULTIPLE_OUTPUT_REDIRECTIONS = 0;
+int SYNTAX_ERROR_MULTIPLE_PIPELINES = 0;
+char bigBuffer[MAXITEM * STORAGE];
+char * bigBufferPtr = bigBuffer;
+char * newArgV[MAXITEM];
+int processTwoStartIndex;
+int wordCount = 0;
+char * inputRedirection;
+char * outputRedirection;
+int fileDescriptor[2];
+
+int main() {
+    /* Declaration of Locals */
+    int childReturnValue;
+    int returnValueParse;
+    int inputFileFileDescriptorNum;
+    int outputFileFileDescriptorNum;
+    pid_t kidpid, grandpid;
+
+
+    /*todo Decide if the next two lines should be deleted and just handled in parse()*/
+//    INPUT_REDIRECTION_FLAG = OUTPUT_REDIRECTION_FLAG = PIPELINE_FLAG = WAIT_FLAG = 0;
+//    inputRedirection = outputRedirection = NULL;
+
+    if( (setpgid(getpid(),0)) != 0){
+        fprintf(stderr, "Cant't change process group\n");
+        exit(ERROR2);
+    }
+    (void) signal(SIGTERM, signalCatcher); // todo signal catcher
+    for (;;) {
+        printf(":570: ");
+        returnValueParse = parse();
+
+        if (SYNTAX_ERROR_MULTIPLE_INPUT_REDIRECTIONS == 1) {
+            fprintf(stderr, "You can't have multiple input redirections.\n");
+            continue;
+        }
+        if (SYNTAX_ERROR_MULTIPLE_OUTPUT_REDIRECTIONS == 1) {
+            fprintf(stderr, "You can't have multiple output redirections.\n");
+            continue;
+        }
+        if (SYNTAX_ERROR_MULTIPLE_PIPELINES == 1) { // todo understand how to handle double pipelines
+            fprintf(stderr, "You can't have multiple output redirections.\n");
+            continue;
+        }
+        // Handle seeing EOF as first character in input stream
+        if (returnValueParse == -255 && wordCount == 0) {
+            fprintf(stderr, "EOF was first character in the input stream\n");
+            exit(ERROR1);
+        }
+            // If line is empty reissue prompt
+        else if (wordCount == 0 && returnValueParse == 0) {
+            continue;
+        }
+
+        /* Handling cd */
+        if ((strcmp(newArgV[0], "cd")) == 0) { // todo genv
+            if (wordCount > 2) {
+                fprintf(stderr, "Too many arguments for the command 'cd'\n");
+                continue;
+            }
+            else if (wordCount <= 1) {
+                fprintf(stderr, "No path specified for the 'cd' command\n");
+                continue;
+            }
+            else {
+                if ((chdir(newArgV[1])) == -1) {
+                    fprintf(stderr, "Couldn't change directory.\n"); //todo check if i have to be more specific to which error caused it to fail
+                } else {
+                    char currentDirectory[250];
+                    getcwd(currentDirectory, sizeof(currentDirectory));
+                    printf("%s\n", currentDirectory);
+                }
+            }
+        }
+
+        //Fork TIME
+        //Flush first
+        fflush(stderr);
+        fflush(stdout);
+        if ((kidpid = fork()) == -1){
+            fprintf(stderr,"Fork Failed");
+        }
+        else if (kidpid == 0){ //child process
+            // Handling of output redirection
+            if(OUTPUT_REDIRECTION_FLAG == 1 && outputRedirection != NULL) {
+                int accessOutputRedirectionfile = access(inputRedirection, W_OK);
+                if (accessOutputRedirectionfile < 0) {
+                    if (errno == EROFS) {
+                        fprintf(stderr, "Output redirection file was on a read-only file system");
+                        continue;
+                    }
+                }
+                else if (accessOutputRedirectionfile == 0) {
+                    outputFileFileDescriptorNum = open(outputRedirection, O_WRONLY | O_CREAT | O_EXCL |S_IRUSR| S_IWUSR , 0600); //todo O_TRUNC | S_IRUSR| S_IRGRP | S_IRGRP | S_IWUSR possibly
+                    if (outputFileFileDescriptorNum == -1) {
+                        fprintf(stderr, "Couldn't open the output redirection file\n");
+                        continue;
+                    }
+                }
+            }
+            // Handling of input redirection
+            if (INPUT_REDIRECTION_FLAG == 1 && inputRedirection != NULL) {
+                // OPEN THIS FILE AND USE IT AS INPUT
+                // does the file exist and do I have the correct permissions, using the calling processe's real UID & GID
+                int accessInputRedirectionfile = access(inputRedirection, R_OK);
+                if (accessInputRedirectionfile < 0) {
+                    if (errno == EACCES) {
+                        fprintf(stderr, "Input redirection file permissions denied\n");
+                    } else if (errno == ENOENT && errno == ENOTDIR) {
+                        fprintf(stderr, "Input redirection path doesn't exist");
+                    }
+                }
+                else if (accessInputRedirectionfile == 0){
+                    inputFileFileDescriptorNum = open(inputRedirection, O_RDONLY);
+                    if (inputFileFileDescriptorNum == -1) {
+                        fprintf(stderr, "Couldn't open the input redirection file\n");
+                        // todo Should I exit?
+                    }
+                }
+            }
+            if (INPUT_REDIRECTION_FLAG == 1 && inputRedirection != NULL){
+                dup2(inputFileFileDescriptorNum, STDIN_FILENO);
+                close(inputFileFileDescriptorNum);
+            }
+            if (OUTPUT_REDIRECTION_FLAG == 1 && outputRedirection != NULL){
+                dup2(outputFileFileDescriptorNum, STDOUT_FILENO);
+                close(outputFileFileDescriptorNum);
+            }
+//            if(PIPELINE_FLAG = 1){
+//                pipe(fileDescriptor);
+//                pipeline(); // calls grandchild process
+//                continue; // todo zombies and handling &
+//            }
+            if ((execvp(newArgV[0],newArgV)) == -1){
+                fprintf(stderr, "Couldn't execute command");
+//                exit(#); // todo handle this
+            }
+
+        } // End of child process
+        // parent process
+        if(WAIT_FLAG == 1){
+            printf("%s [%d]\n", *newArgV, kidpid);
+            continue;
+        }
+        else{
+            for(;;){
+                pid_t find_pid;
+                find_pid = wait(NULL);
+                if(find_pid == kidpid){
+                    break;
+                }
+            }
+
+        }
+    }
+    killpg(getpgrp(), SIGTERM);
+    printf("p2 Terminated");
+    exit(0); //todo change num
+}
+
+
+void signalCatcher(int signalNum){
+    //stays empty, rather than dying do nothing
+}
+
+void pipeline(){
+//    dup2(outputFileFileDescriptorNum,STDOUT_FILENO);
+//    close(STDIN_FILENO);
+//    close(STDOUT_FILENO);
+//    dup2(STDOUT_FILENO,fileDescriptor[1]);
+//    close(fileDescriptor[0]);
+//
+//    fflush(stderr);
+//    fflush(stdout);
+//    int grandpid = fork();
+//    if (grandpid == -1){
+//        fprintf(stderr,"Grandchild Fork Failed");
+//    }
+//    else{ // grandchild
+//
+//    }
+}
+
+int parse(){
+    /* Declaration of Locals */
+    char * tempPtr;  // used for handling if we see the '&' character and the next character isn't a ';' 'NEWLINE' or '$ '
+    char * bigBufferPtrCpy;  // used for handling if we see the '&' character and the next character isn't a ';' 'NEWLINE' or '$ '
+    int getWordReturn;
+    int i;
+    /* Reset all declarations to support invoking parse() multiple times */
+    INPUT_REDIRECTION_FLAG = OUTPUT_REDIRECTION_FLAG = PIPELINE_FLAG = WAIT_FLAG = BACKSLASH_FLAG = wordCount = getWordReturn = 0; //todo for getWordReturn do i do this if I declare them each time parse is invoked
+    SYNTAX_ERROR_MULTIPLE_PIPELINES = SYNTAX_ERROR_MULTIPLE_OUTPUT_REDIRECTIONS = SYNTAX_ERROR_MULTIPLE_INPUT_REDIRECTIONS = 0;
+    inputRedirection = outputRedirection = tempPtr = bigBufferPtrCpy = NULL; // todo for tempPtr and bigBufferPtrCpy do I need to do this if I declare them each time parse is invoked
+    bigBufferPtr = bigBuffer;
+
+    for ( i = 0; i < MAXITEM * STORAGE ; i++){
+        bigBuffer[i] = NULLTERM;
+    }
+    for(i = 0; i < MAXITEM; i++){
+        newArgV[i] = NULL;
+    }
+
+    while(((getWordReturn = getword(bigBufferPtr))) != -255) {
+        // Handling if the getword() function parsed a dollar sign at the begining of a word, we need to strip the minus sign from the getwordReturn for prog2
+        if (getWordReturn < 0){
+            getWordReturn = abs(getWordReturn);
+        }
+        /* Handling if the getword() function parsed either a SEMICOLON or a NEWLINE, or a DOLLARSIGN followed by a space */
+        if(getWordReturn == 0){
+            newArgV[wordCount] = NULL;
+            return 0;
+        }
+
+        /* Handle Seeing flags */
+        // Handling of input redirection
+        if((strcmp(bigBufferPtr,"<")) == 0 && INPUT_REDIRECTION_FLAG == 0 && BACKSLASH_FLAG == 0){
+            INPUT_REDIRECTION_FLAG = 1; // set this flag so main() can handle input redirection
+            // before calling getword() again we need to update the location of where bigBufferPtr is pointing to
+            bigBufferPtr = bigBufferPtr + getWordReturn + 1; // +1 for null terminator
+            getWordReturn = getword(bigBufferPtr);
+            if (getWordReturn == 0 ){
+                newArgV[wordCount] = NULL;
+                return 0; // todo: check if this is right should this not throw an error <
+            }
+            else {
+                inputRedirection = bigBufferPtr;
+                bigBufferPtr = bigBufferPtr + getWordReturn + 1; // +1 for null terminator
+                continue;
+            }
+        }
+        // Handling of more than one input redirection
+        if((strcmp(bigBufferPtr,"<")) == 0 && INPUT_REDIRECTION_FLAG == 1 && BACKSLASH_FLAG == 0){
+            SYNTAX_ERROR_MULTIPLE_INPUT_REDIRECTIONS = 1;
+            bigBufferPtr = bigBufferPtr + getWordReturn + 1;
+            getWordReturn = getword(bigBufferPtr);
+            bigBufferPtr = bigBufferPtr + getWordReturn + 1;
+            continue; // continue reading in from stdin and catch this error once parse is done in the main function
+        }
+        // Handling of output redirection
+        if((strcmp(bigBufferPtr,">")) == 0  && OUTPUT_REDIRECTION_FLAG == 0 && BACKSLASH_FLAG == 0){
+            OUTPUT_REDIRECTION_FLAG = 1; // set this flag so main() can handle output redirection
+            // before calling getword() again we need to update the location of where bigBufferPtr is pointing to
+            bigBufferPtr = bigBufferPtr + getWordReturn + 1; // +1 for null terminator
+            getWordReturn = getword(bigBufferPtr);
+            if (getWordReturn == 0 ){
+                newArgV[wordCount] = NULL;
+                return 0; // todo: check if this is right should this not throw an error <
+            }
+            else {
+                outputRedirection = bigBufferPtr;
+                bigBufferPtr = bigBufferPtr + getWordReturn + 1; // +1 for null terminator
+                continue;
+            }
+        }
+        // Handling of more than one output redirection
+        if((strcmp(bigBufferPtr,">")) == 0 && OUTPUT_REDIRECTION_FLAG == 1 && BACKSLASH_FLAG == 0){
+            SYNTAX_ERROR_MULTIPLE_OUTPUT_REDIRECTIONS = 1;
+            bigBufferPtr = bigBufferPtr + getWordReturn + 1;
+            getWordReturn = getword(bigBufferPtr);
+            bigBufferPtr = bigBufferPtr + getWordReturn + 1;
+            continue; // continue reading in from stdin and catch this error once parse is done in the main function
+        }
+        // Handling a potential background process
+        if((strcmp(bigBufferPtr,"&")) == 0 && BACKSLASH_FLAG == 0){
+            tempPtr = bigBufferPtr; // make copy of location of '&' incase we need to add it to newArgV.
+            bigBufferPtr = bigBufferPtr + getWordReturn + 1;
+            getWordReturn = getword(bigBufferPtr);
+            if(getWordReturn == 0){ // getword parsed ;, NEWLINE, or $Newline
+                WAIT_FLAG = 1;
+                newArgV[wordCount] = NULL;
+                //break;
+                return 0; //todo document why 0 is returned
+            }
+            if(getWordReturn == -255){ // getword parsed EOF
+                break;
+            }
+            if (getWordReturn < 0){
+                getWordReturn = abs(getWordReturn);
+                //todo get checked
+                newArgV[wordCount++] = tempPtr; // add the '&' to newArgV; treat the '&' character as a argument for the command
+                bigBufferPtrCpy = bigBufferPtr + getWordReturn - 1 ; // todo check if this is acceptable what if the previous
+                while(*bigBufferPtrCpy != NULLTERM) {
+                    ungetc(*bigBufferPtrCpy--, stdin); // note the reverse this order
+                }
+                // bigBufferPtr is already in the correct location for the next iteration
+                continue;
+
+            } //todo add this to every time you call next word
+            if(getWordReturn != 0){ //$ negative wordreturn size
+                newArgV[wordCount++] = tempPtr; // add the '&' to newArgV; treat the '&' character as a argument for the command
+                bigBufferPtrCpy = bigBufferPtr + getWordReturn - 1 ; // todo check if this is acceptable what if the previous
+                while(*bigBufferPtrCpy != NULLTERM) {
+                    ungetc(*bigBufferPtrCpy--, stdin); // note the reverse this order
+                }
+                // bigBufferPtr is already in the correct location for the next iteration
+                continue;
+            }
+        }
+        // Handling of a pipeline
+        if((strcmp(bigBufferPtr,"|")) == 0  && PIPELINE_FLAG == 0 && BACKSLASH_FLAG == 0){
+            PIPELINE_FLAG = 1; // set this flag so main() can handle input redirection
+            newArgV[wordCount++] = NULL;
+            processTwoStartIndex = wordCount;
+            bigBufferPtr = bigBufferPtr + getWordReturn + 1;
+            continue;
+        }
+        // Handling multiple pipeline redirections
+        if((strcmp(bigBufferPtr,"|")) == 0  && PIPELINE_FLAG == 1 && BACKSLASH_FLAG == 0){  //todo do I need to worry about this? should I run first two commands?
+            SYNTAX_ERROR_MULTIPLE_PIPELINES = 1;
+            bigBufferPtr = bigBufferPtr + getWordReturn + 1;
+            continue; // continue reading in from stdin and catch this error once parse is done in the main function
+        }
+
+        // Handling a regular word
+        newArgV[wordCount++] = bigBufferPtr;
+        BACKSLASH_FLAG = 0;
+        // Update pointer for next iteration
+        bigBufferPtr = bigBufferPtr + getWordReturn + 1; // +1 for the null terminator
+    }
+    return -255;
+}

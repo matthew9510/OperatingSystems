@@ -1,0 +1,4 @@
+/bin/date
+/home/cs/faculty/cs570/jabbersleepy &
+/bin/date
+/bin/sleep 3

@@ -1,0 +1,2 @@
+echo \>\>\dog feet\| | tr -s dgftoe rtera
+echo dog \ \ feet\| | tr g t | tr t d|tr d c | tr e o | tr -s o a | tr \  x

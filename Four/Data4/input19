@@ -1,0 +1,1 @@
+echo dog feet | tr o a | tr e o | tr d c | tr t d | tr g t 

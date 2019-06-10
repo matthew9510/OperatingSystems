@@ -1,0 +1,6 @@
+echo refuse to execute commands containing unknown variables: $snafubar 
+echo but NO error when a dollar sign is escaped: \$snafubar
+echo NOTE: I promise NOT to test things like BackSlash-LessThan-LessThan!
+environ nosuchthing
+environ NewVar MACHTYPE
+environ $NewVar

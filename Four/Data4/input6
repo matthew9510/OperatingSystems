@@ -1,0 +1,3 @@
+/bin/date &
+/home/cs/faculty/cs570/jabbersleepy| tr -s d i | tr -s e a | tr -s p b | tr a-z A-Z
+/bin/date

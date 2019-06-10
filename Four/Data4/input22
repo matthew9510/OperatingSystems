@@ -1,0 +1,4 @@
+environ HOME /etc/plymouth/
+environ HOME &
+cd
+ls

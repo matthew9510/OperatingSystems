@@ -1,0 +1,10 @@
+cd /tmp this and the next 6 should all cause complaints to be sent to stderr
+$HOME bogus 'executable' in argv[0]
+sort < /etc/shells < /etc/redhat-release
+< somefile
+/usr/bin/uname >
+echo SHOULD_not_EXEC |
+</home/cs/faculty/cs570/freq sort > &
+echo This echo and the next cd SHOULD be executed by your shell and NOT cause errors
+cd .. &
+/usr/bin/pwd
